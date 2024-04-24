@@ -114,6 +114,8 @@ bool importCell0(const string& filename, PolygonalMesh& mesh){
 
         mesh.CoordinateCells0s.push_back(coordinates);
         mesh.IdCell0s.push_back(id);
+        mesh.CoordinateId[id] = coordinates;
+
         if( marker != 0)
                 {
                     auto ret = mesh.MarkerCell0s.insert({marker, {id}});
@@ -162,6 +164,7 @@ bool importCell1(const string& path, PolygonalMesh& mesh){
         getline(converter,token,';');
         vertices(1) = stoi(token);
 
+
         // TEST sulle lunghezze
         if(abs((vertices(0)-vertices(1))/max(vertices(0),vertices(1))) > mesh.tol)
         {mesh.IdCell1s.push_back(id);
@@ -200,6 +203,7 @@ bool importCell2(const string& path, PolygonalMesh& mesh){
     mesh.IdCell2s.reserve(mesh.NumberCell2s);
     mesh.VerticesCell2s.reserve(mesh.NumberCell2s);
     mesh.EdgesCell2s.reserve(mesh.NumberCell2s);
+    unsigned int NumVertices;
 
     for (const string& line :lines)   // scorre la lista
     {
@@ -212,7 +216,7 @@ bool importCell2(const string& path, PolygonalMesh& mesh){
         unsigned int marker = stoi(token);
 
         getline(converter,token,';');
-        unsigned int NumVertices = stoi(token);
+        NumVertices = stoi(token);
         vector<unsigned int> vertices = {};
         for(unsigned int i = 0;i<NumVertices;i++)
         {getline(converter,token,';');
@@ -229,15 +233,22 @@ bool importCell2(const string& path, PolygonalMesh& mesh){
         mesh.EdgesCell2s.push_back(edges);
         mesh.VerticesCell2s.push_back(vertices);
 
-}
-    // TEST aree
-        if(mesh.NumberCell2s == 3)
-        {
-            vector<unsigned int> Coordinate1 = mesh.VerticesCell2s[0];
-            vector<unsigned int> Coordinate2 = mesh.VerticesCell2s[1];
-            vector<unsigned int> Coordinate3 = mesh.VerticesCell2s[2];
 
-            double area = 0.5*((Coordinate2[1]-Coordinate3[1]))-Coordinate1[1]*(Coordinate2[0]-Coordinate3[0])+(Coordinate2[0]*Coordinate3[1]-Coordinate3[0]*Coordinate2[1]);
+    // TEST aree
+        double area = 0;
+        for(unsigned int i = 0; i < NumVertices-1;i++)
+        {
+            Vector2d Coordinate1 = mesh.CoordinateId[vertices[i]];
+            Vector2d Coordinate2 = mesh.CoordinateId[vertices[i+1]];
+
+            area += (Coordinate1[0]*Coordinate2[1])-(Coordinate1[1]-Coordinate2[0]);
+}
+        Vector2d Coordinate1 = mesh.CoordinateId[vertices[NumVertices-1]];  // si aggiunge gli estremi
+        Vector2d Coordinate2 = mesh.CoordinateId[vertices[0]];
+        area += (Coordinate1[0]*Coordinate2[1])-(Coordinate1[1]-Coordinate2[0]);
+
+        area *= 0.5;
+        area = abs(area);
 
             if(area <= mesh.tol_aree)
             {
